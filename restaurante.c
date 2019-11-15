@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <time.h>
 #include <sys/wait.h>
 
 void manejadora_somelier(int sig);
@@ -12,8 +13,9 @@ void manejadora_mozo(int sig);
 int calculaAleatorios(int min, int max);
 
 int main(int argc, char *argv[]) {
-	//srand(time(NULL));
+	srand(time(NULL));
 	pid_t som, jefe;
+	int status, found;
 	if(argc!=2){
 		printf("ERROR! El numero de argumentos es superior al valido\n");
 		exit(-1);
@@ -25,9 +27,9 @@ int main(int argc, char *argv[]) {
 			exit(-1);
 		}else{
 			//sumamos a los pinches el jefe de sala y somelier 
-			struct sigaction somelier;
-			struct sigaction jefe_sala;
-			struct sigaction pinches;
+			struct sigaction somelier = {0};
+			struct sigaction jefe_sala = {0};
+			struct sigaction pinches = {0};
 			int numtotal,num_ale;
 			numtotal = num + 1 + 1;
 			int i,j;
@@ -55,7 +57,13 @@ int main(int argc, char *argv[]) {
 							 		return 1;
 		 						}
 		 						pause();
-								break;
+								wait(&status);
+								found = WEXITSTATUS(status);
+								if(found==1){
+									printf("El mozo encontro lo que faltaba\n");
+								}else{
+									printf("El mozo no encontro lo que faltaba\n");
+								}
 							case 1:
 								printf("Soy el jefe de sala con pid: %d, y mi padre es el chef con pid: %d\n", getpid(), getppid());
 								jefe_sala.sa_handler=manejadora_jefesala;
@@ -66,7 +74,7 @@ int main(int argc, char *argv[]) {
 								pause();
 								break;
 							default:
-								printf("Soy el pinche numero %d con pid: %d, y mi padre es el chef com pid: %d\n", i, getpid(), getppid());
+								printf("Soy el pinche numero %d con pid: %d, y mi padre es el chef com pid: %d\n", (i-1), getpid(), getppid());
 								pinches.sa_handler=manejadora_pinches;
 								if(-1==sigaction(SIGUSR1,&pinches,NULL)){
 									perror("PINCHES: sigaction");
@@ -104,34 +112,25 @@ int calculaAleatorios(int min, int max){
 }
 
 void manejadora_somelier(int sig){
-	printf("Prie");
-	struct sigaction mozo2;
-	int status, found;
+	struct sigaction mozo2 = {0};
 	pid_t mozo = fork();
+	printf("Entro en la manejadora del somelier\n");
 	if(mozo==-1){
 		perror("Error al crear el proceso hijo\n");
 	}else{
 		if(mozo==0){
 			printf("Soy el mozo de los recados con pid: %d, y mi padre es el somelier con pid: %d\n", getpid(), getppid());
 			mozo2.sa_handler=manejadora_mozo;
-			if(-1==sigaction(SIGUSR1,&mozo2,NULL)){
-				perror("MOZO: sigaction");
-			}
 			if(-1==sigaction(SIGPIPE,&mozo2,NULL)){
 				perror("MOZO: sigaction");
+				return 1;
 			}
 			pause();
-			found = WEXITSTATUS(status);
-			if(found==1){
-				printf("El mozo encontro lo que faltaba\n");
-			}else{
-				printf("El mozo no encontro lo que faltaba\n");
-			}
 		}else{
+			printf("HOLA\n");
 			kill(mozo,SIGPIPE);
 		}
 	}
-	exit (1);
 }
 
 void manejadora_jefesala(int sig){
@@ -145,15 +144,7 @@ void manejadora_pinches(int sig){
 }
 
 void manejadora_mozo(int sig){
-	struct sigaction mozo;
-	mozo.sa_handler=manejadora_mozo;
-	if(-1==sigaction(SIGPIPE,&mozo,NULL)){
-		perror("MOZO: sigaction");
-	}
-	if(-1==sigaction(SIGUSR1,&mozo,NULL)){
-		perror("MOZO: sigaction");
-	}
-	pause();
+	printf("Estoy en la menejadora del mozo\n");
 	int num;
 	num = calculaAleatorios(0,1);
 	exit(num);
