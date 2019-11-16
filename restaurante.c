@@ -13,8 +13,8 @@ void manejadora_pinches(int sig);
 void manejadora_mozo(int sig);
 
 int main(int argc, char *argv[]) {	
-	srand(time(NULL));
 
+	srand(time(NULL));
 	//comprobamos que los argumentos son correcto
 	if(argc!=2){
 		printf("Error en el numero de argumentos\n");
@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
 			//si los argumentos son correctos, llega aqui y comienza la ejecucion normal
 			//el numero total de trabajadores va a ser el numero de pinches + el somelier + el jefe de sala
 			int numtrabajadores = num + 1 +1;
-			int i,j,k=0,status, listo, listo2, contador_platos=0;
+			int i,j,k=0,status, estado, listo, listo2, contador_platos=0;
 			pid_t somelier, jefe_sala, *pinche;
 			pinche = (pid_t*)malloc(sizeof(pid_t)*num);
 			//vamos a crear las estructuras necesarias
@@ -57,11 +57,13 @@ int main(int argc, char *argv[]) {
 									perror("SOMELIER: sigaction");
 									return 1;
 								}
+								som.sa_handler=manejadora_som;								
 								if(-1==sigaction(SIGUSR2, &som, NULL)){
 									perror("SOMELIER: sigaction");
 									return 1;
 								}
 								pause();
+								break;
 							//estamos en el codigo del jefe de sala
 							case 1:
 								printf("Soy el jefe de sala con pid: %d, y mi padre es el chef con pid: %d\n", getpid(), getppid());
@@ -71,6 +73,7 @@ int main(int argc, char *argv[]) {
 									return 1;
 								}
 								pause();
+								break;
 							//estamos en el codigo de los pinches
 							default:
 								printf("Soy el pinche %d con pid: %d, y mi padre es el chef con pid: %d\n", (i-1), getpid(), getppid());
@@ -117,8 +120,8 @@ int main(int argc, char *argv[]) {
 				}
 				for(k=0;k<num;k++){
 					kill(pinche[k], SIGUSR1);
-					listo2=wait(&status);
-					listo2=WEXITSTATUS(status);
+					listo2=wait(&estado);
+					listo2=WEXITSTATUS(estado);
 					if(listo2==1){
 						contador_platos++;
 					}
@@ -148,7 +151,7 @@ int calculaAleatorios(int min, int max){
 }
 
 void manejadora_som(int sig){
-	printf("Estoy en la manejadora del somelier\n");
+	srand(time(NULL));
 	int status, devolver, esperamos;
 	pid_t mozo;
 	struct sigaction mozos = {0};
@@ -179,15 +182,15 @@ void manejadora_som(int sig){
 			if(esperamos==1){
 				devolver=3;
 			}else{
-				if(esperamos==0 && sig==12){
+				if(sig==12){
 					devolver=1;
 				}else{
 					devolver=2;
 				}
 			}
-			exit(devolver);
 		}
 	}
+	exit(devolver);
 }
 
 void manejadora_jefesala(int sig){
@@ -197,6 +200,7 @@ void manejadora_jefesala(int sig){
 }
 
 void manejadora_pinches(int sig){
+	srand(time(NULL));
 	printf("Estoy en la majedora de los pinches\n");
 	//generamos el numero aleatorio que los pinches van a dormir
 	int num = calculaAleatorios(2,5);
@@ -205,10 +209,11 @@ void manejadora_pinches(int sig){
 	//han cocinado bien los platos(0->mal && 1->bien)
 	int num2 = calculaAleatorios(0,1);
 	//devolvemos dicho numero chef
-	exit(num);
+	exit(num2);
 }
 
 void manejadora_mozo(int sig){
+	srand(time(NULL));
 	printf("Estoy en la manejadora del mozo\n");
 	//calculamos un aleatorio para saber si encontro lo que buscaba
 	int num = calculaAleatorios(0,1);
