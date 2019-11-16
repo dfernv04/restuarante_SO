@@ -23,7 +23,7 @@ do
 			echo -e "Escribe el numero de piches de cocina que desee \n"
 			read n
 			./res $n
-			sleep 5
+			sleep 3
 			echo -e "Ejecucion completada!\n";;
                 4) echo -e "Has seleccionado salir\n"
 			echo -e "Vuelva pronto. Muchas gracias!\n"
