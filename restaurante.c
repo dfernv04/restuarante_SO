@@ -22,15 +22,13 @@ int main(int argc, char *argv[]) {
 	}else{
 		int num = atoi(argv[1]);
 		if(num<=0){
-			printf("Error, el numero de pinches ha de ser mayor que 0\n");;
+			printf("Error, el numero de pinches ha de ser mayor que 0\n");
 			exit(-1);
 		}else{
 			//si los argumentos son correctos, llega aqui y comienza la ejecucion normal
 			//el numero total de trabajadores va a ser el numero de pinches + el somelier + el jefe de sala
-			int numtrabajadores = num + 1 +1;
-			int i,j,k=0,status, estado, listo, listo2, contador_platos=0;
-			pid_t somelier, jefe_sala, *pinche;
-			pinche = (pid_t*)malloc(sizeof(pid_t)*num);
+			int numtrabajadores = num + 2;
+			int i,j,k, espera, status, count_platos=0;
 			//vamos a crear las estructuras necesarias
 			struct sigaction som = {0};
 			struct sigaction jefe = {0};
@@ -42,42 +40,37 @@ int main(int argc, char *argv[]) {
 			for(i=0;i<numtrabajadores;i++){
 				//creamos el proceso hijo
 				pid=fork();
-				//almacenamos el proceso hijo
-				trabajadores[i]=pid;
 				if(pid==-1){
 					perror("Error al crear el proceso hijo");
 				}else{
 					if(pid==0){
 						switch(i){
-							//esta en el codigo del somelier
+								//codigo del somelier
 							case 0:
 								printf("Soy el somelier con pid: %d, y mi padre es el chef con pid: %d\n", getpid(), getppid());
-								som.sa_handler=manejadora_som;
+								som.sa_handler = manejadora_som;
 								if(-1==sigaction(SIGUSR1, &som, NULL)){
 									perror("SOMELIER: sigaction");
 									return 1;
 								}
-								som.sa_handler=manejadora_som;								
 								if(-1==sigaction(SIGUSR2, &som, NULL)){
 									perror("SOMELIER: sigaction");
 									return 1;
 								}
 								pause();
-								break;
-							//estamos en el codigo del jefe de sala
+								//codigo del jefe de sala
 							case 1:
-								printf("Soy el jefe de sala con pid: %d, y mi padre es el chef con pid: %d\n", getpid(), getppid());
-								jefe.sa_handler=manejadora_jefesala;
+								printf("Soy el jefe de sala de estar con pid: %d, y mi padre es el chef con pid: %d\n", getpid(), getppid());
+								jefe.sa_handler = manejadora_jefesala;
 								if(-1==sigaction(SIGUSR1, &jefe, NULL)){
 									perror("JEFE DE SALA: sigaction");
 									return 1;
 								}
 								pause();
-								break;
-							//estamos en el codigo de los pinches
+								//codigo de los pinches
 							default:
 								printf("Soy el pinche %d con pid: %d, y mi padre es el chef con pid: %d\n", (i-1), getpid(), getppid());
-								pinches.sa_handler=manejadora_pinches;
+								pinches.sa_handler = manejadora_pinches;
 								if(-1==sigaction(SIGUSR1, &pinches, NULL)){
 									perror("PINCHES: sigaction");
 									return 1;
@@ -85,64 +78,50 @@ int main(int argc, char *argv[]) {
 								pause();
 						}
 					}else{
-						somelier = trabajadores[0];
-						jefe_sala = trabajadores[1];
-						for(j=2;j<numtrabajadores;j++){
-							pinche[k] = trabajadores[j];
-							k++;
-						}
+						trabajadores[i]=pid;
 					}
 				}
 			}
-			//enviamos la señal SIGUSR1 al somelier para que cree al mozo de los recados
-			kill(somelier, SIGUSR1);
-			//le decimos al chef que duerma 3 segundos
+			//el chef duerme 3 segundos
 			sleep(3);
-			//genera un aleatorio para ver si falta vino o ingredientes
+			//genera un numero aleatorio (0->faltan ingredientes) (1->falta vino)
 			int num_ale = calculaAleatorios(0,1);
 			if(num_ale==0){
 				printf("Faltan ingredientes\n");
-				kill(somelier,SIGUSR1);
+				kill(trabajadores[0], SIGUSR1);
 			}else{
 				printf("Falta vino\n");
-				kill(somelier, SIGUSR2);
+				kill(trabajadores[0], SIGUSR2);
 			}
-			listo=wait(&status);
-			listo=WEXITSTATUS(status);
-			if(listo==1){
-				printf("RESTAURANTE CERRADO\n");
-				for(k=0;k<numtrabajadores;k++){
-					kill(trabajadores[k], SIGKILL);
+
+			espera = wait(&status);
+			espera = WEXITSTATUS(status);
+			if(espera==1){
+				kill(trabajadores[1], SIGKILL);
+				for(j=2;j<numtrabajadores;j++){
+					kill(trabajadores[j],SIGKILL);
 				}
 			}else{
-				if(listo==2){
-					printf("Faltan algunos ingredientes\n");
-				}
-				for(k=0;k<num;k++){
-					kill(pinche[k], SIGUSR1);
-					listo2=wait(&estado);
-					listo2=WEXITSTATUS(estado);
-					if(listo2==1){
-						contador_platos++;
+				for(k=2;k<numtrabajadores;k++){
+					kill(trabajadores[k],SIGUSR1);
+					espera = wait(&status);
+					espera = WEXITSTATUS(status);
+					if(espera==1){
+						count_platos++;
 					}
 				}
-				if(contador_platos==0){
-					printf("CERRANDO RESTAURANTE...\n");
-					for(k=0;k<numtrabajadores;k++){
-						kill(trabajadores[k], SIGKILL);
-					}
+				if(count_platos==0){
+					printf("CERRANDO AL RESTAURANTE...\n");
+					kill(trabajadores[1], SIGKILL);
 				}else{
-					printf("El numero de platos preparados por los pinches es de %d\n", contador_platos);
-					kill(jefe_sala,SIGUSR1);
-					printf("PUEDE ABRIRSE EL RESTAURANTE\n");
-					for(k=0;k<numtrabajadores;k++){
-						kill(trabajadores[k], SIGKILL);
-					}
+					printf("El numero de platos preparados por los pinches es: %d\n", count_platos);
+					kill(trabajadores[1], SIGUSR1);
+					printf("ABRIENDO RESTAURANTE...\n");
+					kill(trabajadores[1], SIGKILL);
 				}
 			}
 		}
 	}
-
 	return 0;
 }
 
@@ -151,72 +130,69 @@ int calculaAleatorios(int min, int max){
 }
 
 void manejadora_som(int sig){
-	srand(time(NULL));
-	int status, devolver, esperamos;
-	pid_t mozo;
-	struct sigaction mozos = {0};
-	mozo = fork();
-	if(mozo==-1){
+	int status, espera, devuelto;
+	pid_t pid;
+	struct sigaction mozo;
+	pid = fork();
+	if(pid==-1){
 		perror("ERROR al crear el proceso hijo");
+		exit(1);
 	}else{
-		if(mozo==0){
+		if(pid==0){
 			printf("Soy el mozo de los recados con pid: %d, y mi padre es el somelier con pid: %d\n", getpid(), getppid());
-			mozos.sa_handler=manejadora_mozo;
-			if(-1==sigaction(SIGPIPE, &mozos, NULL)){
+			mozo.sa_handler = manejadora_mozo;
+			if(-1==sigaction(SIGPIPE, &mozo, NULL)){
 				perror("MOZO: sigaction");
-				exit(-1);
 			}
 			pause();
 		}else{
-			kill(mozo, SIGPIPE);
-			//esperamos el valor que devuelva el mozo
-			esperamos = wait(&status);
-			esperamos = WEXITSTATUS(status);
-			if(esperamos==0){
-				printf("El mozo no encontro lo que buscaba\n");
+			sleep(2);
+			kill(pid, SIGPIPE);
+			espera = wait(&status);
+			espera = WEXITSTATUS(status);
+			if(espera==0 && sig==12){
+				printf("NO SE PUEDE ABRIR EL RESTAURANTE\n");
+				devuelto = 1;
 			}else{
-				printf("El mozo encontro lo que buscaba\n");
-			}
-			//este valor devuelto por el mozo combinado con la señal que mando el chef al somelier nos 
-			//indica si mozo encontro el vino, los ingredientes o nada
-			if(esperamos==1){
-				devolver=3;
-			}else{
-				if(sig==12){
-					devolver=1;
+				if(espera==0 && sig==10){
+					printf("Faltan algunos ingredientes\n");
+					devuelto = 2;
 				}else{
-					devolver=2;
+					devuelto = 3;
 				}
 			}
 		}
 	}
-	exit(devolver);
+	exit(devuelto);
 }
 
 void manejadora_jefesala(int sig){
-	printf("Estoy en la manejadora del jefe de sala\n");
 	sleep(3);
-	printf("El jefe de sala ha terminado de montar las mesas\n");
+	printf("El jefe de sala ha acabado de montar las mesas\n");
 }
 
 void manejadora_pinches(int sig){
 	srand(time(NULL));
-	printf("Estoy en la majedora de los pinches\n");
-	//generamos el numero aleatorio que los pinches van a dormir
-	int num = calculaAleatorios(2,5);
-	sleep(num);
-	//generamos un numero aleatorio que nos indica si los pinches 
-	//han cocinado bien los platos(0->mal && 1->bien)
-	int num2 = calculaAleatorios(0,1);
-	//devolvemos dicho numero chef
-	exit(num2);
+	//preparamos un aleatorio para que los pinches duerman
+	int num_ale = calculaAleatorios(2,5);
+	sleep(num_ale);
+	//generamos un aleatorio (0-> mal cocinado) y (1-> bien cocinado)
+	int ale = calculaAleatorios(0,1);
+	if(ale==0){
+		printf("Plato mal cocinado\n");
+	}else{
+		printf("Plato bien cocinado\n");
+	}
+	exit(ale);
 }
 
 void manejadora_mozo(int sig){
 	srand(time(NULL));
-	printf("Estoy en la manejadora del mozo\n");
-	//calculamos un aleatorio para saber si encontro lo que buscaba
-	int num = calculaAleatorios(0,1);
-	//devolvemos el numero al somelier
-	exit(num);
+	int ale = calculaAleatorios(0,1);
+	if(ale==1){
+		printf("El mozo encontro lo que buscaba\n");
+	}else{
+		printf("El mozo no encontro lo que buscaba\n");
+	}
+	exit(ale);
 }
