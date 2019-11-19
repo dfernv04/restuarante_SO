@@ -94,27 +94,34 @@ int main(int argc, char *argv[]) {
 				kill(trabajadores[0], SIGUSR2);
 			}
 
+			//esperamos le valor que nos diga si podemos cocinar los platos o cerrar el restaurante
 			espera = wait(&status);
 			espera = WEXITSTATUS(status);
+			//como no hemos encontrado el vino cerramos el restaurante y matamos a los procesos
 			if(espera==1){
 				kill(trabajadores[1], SIGKILL);
 				for(j=2;j<numtrabajadores;j++){
 					kill(trabajadores[j],SIGKILL);
 				}
+				//vamos a preparar los platos
 			}else{
 				for(k=2;k<numtrabajadores;k++){
 					kill(trabajadores[k],SIGUSR1);
 					espera = wait(&status);
 					espera = WEXITSTATUS(status);
+					//si el valor generado por el pinche es 1 aumentamos el contador de platos preparados
 					if(espera==1){
 						count_platos++;
 					}
 				}
+				//si el contador de platos preparados es 0, cerramos el restaurante y matamos a los procesos
 				if(count_platos==0){
+					printf("No hay platos preparados para abrir el restaurante\n");
 					printf("CERRANDO AL RESTAURANTE...\n");
 					kill(trabajadores[1], SIGKILL);
 				}else{
 					printf("El numero de platos preparados por los pinches es: %d\n", count_platos);
+					//llamamos al jefe de sala para que monte las mesas, abrimos el restaurante y matamos a los procesos
 					kill(trabajadores[1], SIGUSR1);
 					sleep(3);
 					printf("ABRIENDO RESTAURANTE...\n");
@@ -125,16 +132,15 @@ int main(int argc, char *argv[]) {
 	}
 	return 0;
 }
-/*
-void matarProcesos(int *trbajadores){
-	int i=0;
-	for()
-}
-*/
+
+//FUNCIONES USASADAS
+
+//funcion que nos permite calculas los numero aleatorios
 int calculaAleatorios(int min, int max){
 	return rand() % (max-min+1) + min;
 }
 
+//manejadora del somelier
 void manejadora_som(int sig){
 	int status, espera, devuelto;
 	pid_t pid;
@@ -157,13 +163,16 @@ void manejadora_som(int sig){
 			espera = wait(&status);
 			espera = WEXITSTATUS(status);
 			if(espera==0 && sig==12){
-				printf("NO SE PUEDE ABRIR EL RESTAURANTE\n");
+				printf("Falta el vino y no se ha encontrado.\n");
+				printf("No se puede abrir el restaurante\n");
+				printf("CERRANDO RESTAURANTE...\n");
 				devuelto = 1;
 			}else{
 				if(espera==0 && sig==10){
 					printf("Faltan algunos ingredientes\n");
 					devuelto = 2;
 				}else{
+					printf("Tenemos todo lo necesario para hacer los platos\n");
 					devuelto = 3;
 				}
 			}
@@ -172,11 +181,13 @@ void manejadora_som(int sig){
 	exit(devuelto);
 }
 
+//manejadora del jefe de sala
 void manejadora_jefesala(int sig){
 	sleep(3);
 	printf("El jefe de sala ha acabado de montar las mesas\n");
 }
 
+//manejadora de los pinches
 void manejadora_pinches(int sig){
 	srand(time(NULL));
 	//preparamos un aleatorio para que los pinches duerman
@@ -192,6 +203,7 @@ void manejadora_pinches(int sig){
 	exit(ale);
 }
 
+//manejadoras de los mozos
 void manejadora_mozo(int sig){
 	srand(time(NULL));
 	int ale = calculaAleatorios(0,1);
