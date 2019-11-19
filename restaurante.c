@@ -116,6 +116,7 @@ int main(int argc, char *argv[]) {
 				}else{
 					printf("El numero de platos preparados por los pinches es: %d\n", count_platos);
 					kill(trabajadores[1], SIGUSR1);
+					sleep(3);
 					printf("ABRIENDO RESTAURANTE...\n");
 					kill(trabajadores[1], SIGKILL);
 				}
@@ -124,7 +125,12 @@ int main(int argc, char *argv[]) {
 	}
 	return 0;
 }
-
+/*
+void matarProcesos(int *trbajadores){
+	int i=0;
+	for()
+}
+*/
 int calculaAleatorios(int min, int max){
 	return rand() % (max-min+1) + min;
 }
