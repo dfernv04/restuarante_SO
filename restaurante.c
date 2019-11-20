@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
 			struct sigaction jefe = {0};
 			struct sigaction pinches = {0};
 			//creamos el puntero donde vamos a almacenar los pids de los trabajadores
-			pid_t *trabajadores, pid;
+			pid_t *trabajadores, pid, pid_somelier, pid_jefesala, pid_pinches;
 			trabajadores = (pid_t*)malloc(sizeof(pid_t)*numtrabajadores);
 			//vamos a crear a los hijos del chef
 			for(i=0;i<numtrabajadores;i++){
@@ -94,8 +94,9 @@ int main(int argc, char *argv[]) {
 				kill(trabajadores[0], SIGUSR2);
 			}
 
-			//esperamos le valor que nos diga si podemos cocinar los platos o cerrar el restaurante
-			espera = wait(&status);
+			//esperamos el valor del somelier que nos diga si hay vino e ingredientes y de esta
+			//forma saber si podemos cocinar los platos o cerrar el restaurante
+			pid_somelier = wait(&status);
 			espera = WEXITSTATUS(status);
 			//como no hemos encontrado el vino cerramos el restaurante y matamos a los procesos
 			if(espera==1){
@@ -107,7 +108,7 @@ int main(int argc, char *argv[]) {
 			}else{
 				for(k=2;k<numtrabajadores;k++){
 					kill(trabajadores[k],SIGUSR1);
-					espera = wait(&status);
+					pid_pinches = wait(&status);
 					espera = WEXITSTATUS(status);
 					//si el valor generado por el pinche es 1 aumentamos el contador de platos preparados
 					if(espera==1){
