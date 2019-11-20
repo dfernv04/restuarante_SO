@@ -124,9 +124,9 @@ int main(int argc, char *argv[]) {
 					printf("El numero de platos preparados por los pinches es: %d\n", count_platos);
 					//llamamos al jefe de sala para que monte las mesas, abrimos el restaurante y matamos a los procesos
 					kill(trabajadores[1], SIGUSR1);
-					sleep(3);
+					pid_jefesala = wait(&status);
 					printf("ABRIENDO RESTAURANTE...\n");
-					kill(trabajadores[1], SIGKILL);
+					//kill(trabajadores[1], SIGKILL);
 				}
 			}
 		}
@@ -186,6 +186,7 @@ void manejadora_som(int sig){
 void manejadora_jefesala(int sig){
 	sleep(3);
 	printf("El jefe de sala ha acabado de montar las mesas\n");
+	exit(1);
 }
 
 //manejadora de los pinches
