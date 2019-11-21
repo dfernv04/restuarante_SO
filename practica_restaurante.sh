@@ -14,11 +14,11 @@ do
 			cat restaurante.c
 			echo -e ""
 			echo -e "Codigo mostrado con exito!\n";;
-                2) echo -e "Has seleccionado compilar codigo del programa\n"
+                2) echo -e "Has seleccionado compilar el programa\n"
 			echo -e "Compilando...\n"
 			echo -e "Compilacion correcta!!\n"
 			gcc  -o res restaurante.c;;
-                3) echo -e "Has seleccionado ejecutar codigo del programa\n"
+                3) echo -e "Has seleccionado ejecutar el programa\n"
 			echo -e "Ejecutando...\n"
 			if test -a res
 			then
@@ -28,7 +28,7 @@ do
 					read n
 					./res $n
 					sleep 3
-					echo -e "Ejecucion completada!\n"
+					echo -e "Ejecucion completada!!\n"
 				else
 					echo -e "El programa no tiene permiso de ejecucion!\n"
 				fi

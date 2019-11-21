@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
 
 			//esperamos el valor del somelier que nos diga si hay vino e ingredientes y de esta
 			//forma saber si podemos cocinar los platos o cerrar el restaurante
-			pid_somelier = wait(&status);
+			trabajadores[0] = wait(&status);
 			espera = WEXITSTATUS(status);
 			//como no hemos encontrado el vino cerramos el restaurante y matamos a los procesos
 			if(espera==1){
@@ -107,8 +107,9 @@ int main(int argc, char *argv[]) {
 				//vamos a preparar los platos
 			}else{
 				for(k=2;k<numtrabajadores;k++){
+					//llamamos a todos los pinches para que preparen los platos
 					kill(trabajadores[k],SIGUSR1);
-					pid_pinches = wait(&status);
+					trabajadores[k] = wait(&status);
 					espera = WEXITSTATUS(status);
 					//si el valor generado por el pinche es 1 aumentamos el contador de platos preparados
 					if(espera==1){
@@ -124,7 +125,9 @@ int main(int argc, char *argv[]) {
 					printf("El numero de platos preparados por los pinches es: %d\n", count_platos);
 					//llamamos al jefe de sala para que monte las mesas, abrimos el restaurante y matamos a los procesos
 					kill(trabajadores[1], SIGUSR1);
-					pid_jefesala = wait(&status);
+					//esperamos a que el jefe de sala monte las mesas
+					trabajadores[1] = wait(&status);
+					//abrimos el restaurante
 					printf("ABRIENDO RESTAURANTE...\n");
 					//kill(trabajadores[1], SIGKILL);
 				}
@@ -160,9 +163,12 @@ void manejadora_som(int sig){
 			pause();
 		}else{
 			sleep(2);
+			//le mandamos SIGPIPE al mozo para que busque lo que falta
 			kill(pid, SIGPIPE);
-			espera = wait(&status);
+			pid = wait(&status);
 			espera = WEXITSTATUS(status);
+			//comparamos el valor devuelto por el mozo con la señal que el 
+			//chef envio al mozo para ver si cerramos el restaurante o no
 			if(espera==0 && sig==12){
 				printf("Falta el vino y no se ha encontrado.\n");
 				printf("No se puede abrir el restaurante\n");
@@ -208,6 +214,7 @@ void manejadora_pinches(int sig){
 //manejadoras de los mozos
 void manejadora_mozo(int sig){
 	srand(time(NULL));
+	//generamos un aleatorio para saber si el mozo encontro lo que faltaba (1) o no (0)
 	int ale = calculaAleatorios(0,1);
 	if(ale==1){
 		printf("El mozo encontro lo que buscaba\n");
