@@ -25,6 +25,7 @@ int main(int argc, char *argv[]) {
 			printf("Error, el numero de pinches ha de ser mayor que 0\n");
 			exit(-1);
 		}else{
+			printf("\tBIENVENIDO A LA SIMULACIÓN DE UN RESTAURANTE. DISFRUTE!!\n\n");
 			//si los argumentos son correctos, llega aqui y comienza la ejecucion normal
 			//el numero total de trabajadores va a ser el numero de pinches + el somelier + el jefe de sala
 			int numtrabajadores = num + 2;
@@ -47,7 +48,7 @@ int main(int argc, char *argv[]) {
 						switch(i){
 								//codigo del somelier
 							case 0:
-								printf("Soy el somelier con pid: %d, y mi padre es el chef con pid: %d\n", getpid(), getppid());
+								printf("\tSoy el somelier con pid: %d, y mi padre es el chef con pid: %d\n", getpid(), getppid());
 								som.sa_handler = manejadora_som;
 								if(-1==sigaction(SIGUSR1, &som, NULL)){
 									perror("SOMELIER: sigaction");
@@ -60,7 +61,7 @@ int main(int argc, char *argv[]) {
 								pause();
 								//codigo del jefe de sala
 							case 1:
-								printf("Soy el jefe de sala de estar con pid: %d, y mi padre es el chef con pid: %d\n", getpid(), getppid());
+								printf("\tSoy el jefe de sala de estar con pid: %d, y mi padre es el chef con pid: %d\n", getpid(), getppid());
 								jefe.sa_handler = manejadora_jefesala;
 								if(-1==sigaction(SIGUSR1, &jefe, NULL)){
 									perror("JEFE DE SALA: sigaction");
@@ -69,7 +70,7 @@ int main(int argc, char *argv[]) {
 								pause();
 								//codigo de los pinches
 							default:
-								printf("Soy el pinche %d con pid: %d, y mi padre es el chef con pid: %d\n", (i-1), getpid(), getppid());
+								printf("\tSoy el pinche %d con pid: %d, y mi padre es el chef con pid: %d\n", (i-1), getpid(), getppid());
 								pinches.sa_handler = manejadora_pinches;
 								if(-1==sigaction(SIGUSR1, &pinches, NULL)){
 									perror("PINCHES: sigaction");
@@ -84,13 +85,14 @@ int main(int argc, char *argv[]) {
 			}
 			//el chef duerme 3 segundos
 			sleep(3);
+			printf("\n");
 			//genera un numero aleatorio (0->faltan ingredientes) (1->falta vino)
 			int num_ale = calculaAleatorios(0,1);
 			if(num_ale==0){
-				printf("Faltan ingredientes\n");
+				printf("\tCHEF: Faltan ingredientes\n");
 				kill(trabajadores[0], SIGUSR1);
 			}else{
-				printf("Falta vino\n");
+				printf("\tCHEF: Falta vino\n");
 				kill(trabajadores[0], SIGUSR2);
 			}
 
@@ -98,14 +100,26 @@ int main(int argc, char *argv[]) {
 			//forma saber si podemos cocinar los platos o cerrar el restaurante
 			trabajadores[0] = wait(&status);
 			espera = WEXITSTATUS(status);
+			printf("\n");
 			//como no hemos encontrado el vino cerramos el restaurante y matamos a los procesos
 			if(espera==1){
+				printf("\tCHEF: Falta el vino y no se ha encontrado.\n");
+				printf("\tCHEF: No se puede abrir el restaurante\n");
+				printf("\n");
+				printf("\t***CERRANDO RESTAURANTE...***\n");
 				kill(trabajadores[1], SIGKILL);
 				for(j=2;j<numtrabajadores;j++){
 					kill(trabajadores[j],SIGKILL);
 				}
 				//vamos a preparar los platos
 			}else{
+				if(espera==2){
+					printf("\tCHEF: Faltan algunos ingredientes\n");
+				}else{
+					printf("\tCHEF: Tenemos todo lo necesario para preparar los platos\n");
+				}
+				printf("\n");
+				printf("\t***VAMOS A EMPEZAR A COCINAR***\n\n");
 				for(k=2;k<numtrabajadores;k++){
 					//llamamos a todos los pinches para que preparen los platos
 					kill(trabajadores[k],SIGUSR1);
@@ -116,24 +130,29 @@ int main(int argc, char *argv[]) {
 						count_platos++;
 					}
 				}
+				printf("\n");
 				//si el contador de platos preparados es 0, cerramos el restaurante y matamos a los procesos
 				if(count_platos==0){
-					printf("No hay platos preparados para abrir el restaurante\n");
-					printf("CERRANDO AL RESTAURANTE...\n");
+					printf("\tCHEF: No hay platos preparados para abrir el restaurante\n");
+					printf("\n");
+					printf("\t***CERRANDO AL RESTAURANTE...***\n");
 					kill(trabajadores[1], SIGKILL);
 				}else{
-					printf("El numero de platos preparados por los pinches es: %d\n", count_platos);
+					printf("\tCHEF: El numero de platos preparados por los pinches es: %d\n", count_platos);
 					//llamamos al jefe de sala para que monte las mesas, abrimos el restaurante y matamos a los procesos
+					printf("\n");
+					printf("\t***VAMOS A MONTAR LA MESAS DEL RESTAURANTE***\n");
 					kill(trabajadores[1], SIGUSR1);
 					//esperamos a que el jefe de sala monte las mesas
 					trabajadores[1] = wait(&status);
 					//abrimos el restaurante
-					printf("ABRIENDO RESTAURANTE...\n");
-					//kill(trabajadores[1], SIGKILL);
+					printf("\n");
+					printf("\t***ABRIENDO RESTAURANTE...***\n");
 				}
 			}
 		}
 	}
+	printf("\n\n\n");
 	return 0;
 }
 
@@ -155,7 +174,7 @@ void manejadora_som(int sig){
 		exit(1);
 	}else{
 		if(pid==0){
-			printf("Soy el mozo de los recados con pid: %d, y mi padre es el somelier con pid: %d\n", getpid(), getppid());
+			printf("\tSoy el mozo de los recados con pid: %d, y mi padre es el somelier con pid: %d\n", getpid(), getppid());
 			mozo.sa_handler = manejadora_mozo;
 			if(-1==sigaction(SIGPIPE, &mozo, NULL)){
 				perror("MOZO: sigaction");
@@ -170,16 +189,11 @@ void manejadora_som(int sig){
 			//comparamos el valor devuelto por el mozo con la señal que el 
 			//chef envio al mozo para ver si cerramos el restaurante o no
 			if(espera==0 && sig==12){
-				printf("Falta el vino y no se ha encontrado.\n");
-				printf("No se puede abrir el restaurante\n");
-				printf("CERRANDO RESTAURANTE...\n");
 				devuelto = 1;
 			}else{
 				if(espera==0 && sig==10){
-					printf("Faltan algunos ingredientes\n");
 					devuelto = 2;
 				}else{
-					printf("Tenemos todo lo necesario para hacer los platos\n");
 					devuelto = 3;
 				}
 			}
@@ -191,7 +205,7 @@ void manejadora_som(int sig){
 //manejadora del jefe de sala
 void manejadora_jefesala(int sig){
 	sleep(3);
-	printf("El jefe de sala ha acabado de montar las mesas\n");
+	printf("\tJEFE DE SALA: Las mesas han sido montadas\n");
 	exit(1);
 }
 
@@ -204,9 +218,9 @@ void manejadora_pinches(int sig){
 	//generamos un aleatorio (0-> mal cocinado) y (1-> bien cocinado)
 	int ale = calculaAleatorios(0,1);
 	if(ale==0){
-		printf("Plato mal cocinado\n");
+		printf("\tPINCHE: El plato no se ha cocinado bien\n");
 	}else{
-		printf("Plato bien cocinado\n");
+		printf("\tPINCHE: El plato esta listo para servirse\n");
 	}
 	exit(ale);
 }
@@ -217,9 +231,9 @@ void manejadora_mozo(int sig){
 	//generamos un aleatorio para saber si el mozo encontro lo que faltaba (1) o no (0)
 	int ale = calculaAleatorios(0,1);
 	if(ale==1){
-		printf("El mozo encontro lo que buscaba\n");
+		printf("\tMOZO: He encontrado lo que faltaba\n");
 	}else{
-		printf("El mozo no encontro lo que buscaba\n");
+		printf("\tMOZO: No he encontrado lo que faltaba\n");
 	}
 	exit(ale);
 }
