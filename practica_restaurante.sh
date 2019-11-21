@@ -17,21 +17,16 @@ do
                 2) echo -e "Has seleccionado compilar el programa\n"
 			echo -e "Compilando...\n"
 			echo -e "Compilacion correcta!!\n"
-			gcc  -o res restaurante.c;;
+			gcc  -o res restaurante1.c;;
                 3) echo -e "Has seleccionado ejecutar el programa\n"
 			echo -e "Ejecutando...\n"
 			if test -a res
 			then
-				if test -x restaurante.c
-				then
-					echo -e "Escribe el numero de piches de cocina que desee \n"
-					read n
-					./res $n
-					sleep 3
-					echo -e "Ejecucion completada!!\n"
-				else
-					echo -e "El programa no tiene permiso de ejecucion!\n"
-				fi
+				echo -e "Escribe el numero de piches de cocina que desee \n"
+				read n
+				./res $n
+				sleep 3
+				echo -e "Ejecucion completada!!\n"
 			else
 				echo -e "Tienes que compilar antes de ejecutar!\n"
 			fi;;
