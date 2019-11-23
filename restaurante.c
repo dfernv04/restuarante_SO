@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
 			printf("Error, el numero de pinches ha de ser mayor que 0\n");
 			exit(-1);
 		}else{
-			printf("\tBIENVENIDO A LA SIMULACIÓN DE UN RESTAURANTE. DISFRUTE!!\n\n");
+			printf("\tBIENVENIDO A LA SIMULACION DE UN RESTAURANTE. DISFRUTE!!\n\n");
 			//si los argumentos son correctos, llega aqui y comienza la ejecucion normal
 			//el numero total de trabajadores va a ser el numero de pinches + el somelier + el jefe de sala
 			int numtrabajadores = num + 2;
@@ -109,6 +109,7 @@ int main(int argc, char *argv[]) {
 				printf("\t***CERRANDO RESTAURANTE...***\n");
 				kill(trabajadores[1], SIGKILL);
 				for(j=2;j<numtrabajadores;j++){
+					//matamos los procesos que faltan
 					kill(trabajadores[j],SIGKILL);
 				}
 				//vamos a preparar los platos
@@ -123,6 +124,7 @@ int main(int argc, char *argv[]) {
 				for(k=2;k<numtrabajadores;k++){
 					//llamamos a todos los pinches para que preparen los platos
 					kill(trabajadores[k],SIGUSR1);
+					//esperamos que nos devuelvan 1 valor para saber si han cocinado bien o no
 					trabajadores[k] = wait(&status);
 					espera = WEXITSTATUS(status);
 					//si el valor generado por el pinche es 1 aumentamos el contador de platos preparados
@@ -136,6 +138,7 @@ int main(int argc, char *argv[]) {
 					printf("\tCHEF: No hay platos preparados para abrir el restaurante\n");
 					printf("\n");
 					printf("\t***CERRANDO AL RESTAURANTE...***\n");
+					//matamos al jefe de sala que es el unico proceso que no ha sido matado
 					kill(trabajadores[1], SIGKILL);
 				}else{
 					printf("\tCHEF: El numero de platos preparados por los pinches es: %d\n", count_platos);
@@ -150,6 +153,7 @@ int main(int argc, char *argv[]) {
 					printf("\t***ABRIENDO RESTAURANTE...***\n");
 				}
 			}
+			free(trabajadores);
 		}
 	}
 	printf("\n\n\n");
@@ -181,6 +185,7 @@ void manejadora_som(int sig){
 			}
 			pause();
 		}else{
+			//dormimos al sommelier para dar tiempo a enmascarar la señal
 			sleep(2);
 			//le mandamos SIGPIPE al mozo para que busque lo que falta
 			kill(pid, SIGPIPE);
