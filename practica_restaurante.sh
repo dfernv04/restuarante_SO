@@ -32,14 +32,19 @@ do
 			clear;;
                 3) echo -e "Has seleccionado ejecutar el programa\n"
 			echo -e "Ejecutando...\n"
-			if test -a res
+			if test -f res
 			then
-				echo -e "Escribe el numero de piches de cocina que desee \n"
-				read n
-				clear
-				./res $n
-				sleep 3
-				echo -e "Ejecucion completada!!\n"	
+				if test -x res
+				then
+					echo -e "Escribe el numero de piches de cocina que desee \n"
+					read n
+					clear
+					./res $n
+					sleep 3
+					echo -e "Ejecucion completada!!\n"	
+				else
+					echo -e "El ejecutable no tiene permisos de ejecucion!\n"
+				fi
 			else
 				echo -e "Tienes que compilar antes de ejecutar!\n"
 			fi;;
